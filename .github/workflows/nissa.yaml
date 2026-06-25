@@ -1,0 +1,33 @@
+on:
+  workflow_dispatch:   
+
+permissions:
+  contents: write  
+
+jobs:
+  build:
+    strategy: 
+      matrix:
+        board: [nissa]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download repo
+        uses: actions/checkout@v4
+      
+      - name: build nissalegacy
+        run: |
+          set -x
+          sudo apt install pv -y
+          wget -q "https://dl.cros.download/files/${{ matrix.board }}/${{ matrix.board }}.zip"
+          unzip ${{ matrix.board }}.zip
+          sudo bash wax/wax.sh -i ${{ matrix.board }}.bin -p legacy
+          zip ${{ matrix.board }}-legacy.zip ${{ matrix.board }}.bin
+
+      - name: upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: legacy
+          files: ${{ matrix.board }}-legacy.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
